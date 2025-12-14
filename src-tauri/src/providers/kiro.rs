@@ -102,6 +102,13 @@ impl KiroProvider {
         if tokio::fs::try_exists(&path).await.unwrap_or(false) {
             let content = tokio::fs::read_to_string(&path).await?;
             let creds: KiroCredentials = serde_json::from_str(&content)?;
+            tracing::info!(
+                "[KIRO] Main file loaded: has_access={}, has_refresh={}, has_client_id={}, auth_method={:?}",
+                creds.access_token.is_some(),
+                creds.refresh_token.is_some(),
+                creds.client_id.is_some(),
+                creds.auth_method
+            );
             merge_credentials(&mut merged, &creds);
         }
 
@@ -114,12 +121,27 @@ impl KiroProvider {
                 {
                     if let Ok(content) = tokio::fs::read_to_string(&file_path).await {
                         if let Ok(creds) = serde_json::from_str::<KiroCredentials>(&content) {
+                            tracing::info!(
+                                "[KIRO] Extra file {:?}: has_client_id={}, has_client_secret={}",
+                                file_path.file_name(),
+                                creds.client_id.is_some(),
+                                creds.client_secret.is_some()
+                            );
                             merge_credentials(&mut merged, &creds);
                         }
                     }
                 }
             }
         }
+
+        tracing::info!(
+            "[KIRO] Final merged: has_access={}, has_refresh={}, has_client_id={}, has_client_secret={}, auth_method={:?}",
+            merged.access_token.is_some(),
+            merged.refresh_token.is_some(),
+            merged.client_id.is_some(),
+            merged.client_secret.is_some(),
+            merged.auth_method
+        );
 
         self.credentials = merged;
         Ok(())
@@ -161,25 +183,43 @@ impl KiroProvider {
             .to_lowercase();
         let refresh_url = self.get_refresh_url();
 
-        let body = if auth_method == "idc" {
-            serde_json::json!({
-                "refreshToken": refresh_token,
-                "clientId": self.credentials.client_id,
-                "clientSecret": self.credentials.client_secret,
-                "grantType": "refresh_token"
-            })
-        } else {
-            serde_json::json!({ "refreshToken": refresh_token })
-        };
+        let resp = if auth_method == "idc" {
+            // AWS OIDC endpoint requires form-urlencoded format
+            let client_id = self
+                .credentials
+                .client_id
+                .as_ref()
+                .ok_or("No client_id for IdC refresh")?;
+            let client_secret = self
+                .credentials
+                .client_secret
+                .as_ref()
+                .ok_or("No client_secret for IdC refresh")?;
 
-        let resp = self
-            .client
-            .post(&refresh_url)
-            .header("Content-Type", "application/json")
-            .header("Accept", "application/json")
-            .json(&body)
-            .send()
-            .await?;
+            let form_body = format!(
+                "grant_type=refresh_token&client_id={}&client_secret={}&refresh_token={}",
+                urlencoding::encode(client_id),
+                urlencoding::encode(client_secret),
+                urlencoding::encode(refresh_token)
+            );
+
+            self.client
+                .post(&refresh_url)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .body(form_body)
+                .send()
+                .await?
+        } else {
+            let body = serde_json::json!({ "refreshToken": refresh_token });
+            self.client
+                .post(&refresh_url)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .json(&body)
+                .send()
+                .await?
+        };
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -188,13 +228,20 @@ impl KiroProvider {
         }
 
         let data: serde_json::Value = resp.json().await?;
+
+        // AWS OIDC returns snake_case, social endpoint returns camelCase
         let new_token = data["accessToken"]
             .as_str()
+            .or_else(|| data["access_token"].as_str())
             .ok_or("No access token in response")?;
 
         self.credentials.access_token = Some(new_token.to_string());
 
-        if let Some(rt) = data["refreshToken"].as_str() {
+        // Handle both camelCase and snake_case response formats
+        if let Some(rt) = data["refreshToken"]
+            .as_str()
+            .or_else(|| data["refresh_token"].as_str())
+        {
             self.credentials.refresh_token = Some(rt.to_string());
         }
         if let Some(arn) = data["profileArn"].as_str() {

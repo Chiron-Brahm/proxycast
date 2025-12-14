@@ -1,5 +1,6 @@
 mod config;
 mod converter;
+mod database;
 mod logger;
 mod models;
 mod providers;

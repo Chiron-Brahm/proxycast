@@ -312,6 +312,63 @@ async fn set_default_provider(
     Ok(provider)
 }
 
+/// 获取端点 Provider 配置
+#[tauri::command]
+async fn get_endpoint_providers(
+    state: tauri::State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let s = state.read().await;
+    let ep = &s.config.endpoint_providers;
+    Ok(serde_json::json!({
+        "cursor": ep.cursor.clone(),
+        "claude_code": ep.claude_code.clone(),
+        "codex": ep.codex.clone(),
+        "windsurf": ep.windsurf.clone(),
+        "kiro": ep.kiro.clone(),
+        "other": ep.other.clone()
+    }))
+}
+
+/// 设置端点 Provider 配置
+#[tauri::command]
+async fn set_endpoint_provider(
+    state: tauri::State<'_, AppState>,
+    logs: tauri::State<'_, LogState>,
+    endpoint: String,
+    provider: Option<String>,
+) -> Result<String, String> {
+    // 验证 provider（如果提供）
+    if let Some(ref p) = provider {
+        if !p.is_empty() {
+            let _: ProviderType = p.parse().map_err(|e: String| e)?;
+        }
+    }
+
+    let mut s = state.write().await;
+
+    // 使用 set_provider 方法设置对应的 provider
+    if !s
+        .config
+        .endpoint_providers
+        .set_provider(&endpoint, provider.clone())
+    {
+        return Err(format!("未知的客户端类型: {}", endpoint));
+    }
+
+    config::save_config(&s.config).map_err(|e| e.to_string())?;
+
+    let provider_display = provider.as_deref().unwrap_or("默认");
+    logs.write().await.add(
+        "info",
+        &format!(
+            "客户端 {} 的 Provider 已设置为: {}",
+            endpoint, provider_display
+        ),
+    );
+
+    Ok(provider_display.to_string())
+}
+
 #[tauri::command]
 async fn refresh_kiro_token(
     state: tauri::State<'_, AppState>,
@@ -1541,7 +1598,7 @@ pub fn run() {
     let flow_replayer_state = FlowReplayerState(flow_replayer);
 
     // 初始化会话管理器
-    let db_path = database::get_db_path();
+    let db_path = database::get_db_path().expect("Failed to get database path");
     let session_manager =
         Arc::new(SessionManager::new(db_path.clone()).expect("Failed to create SessionManager"));
     let session_manager_state = SessionManagerState(session_manager);
@@ -1754,6 +1811,8 @@ pub fn run() {
             save_config,
             get_default_provider,
             set_default_provider,
+            get_endpoint_providers,
+            set_endpoint_provider,
             // Unified OAuth commands (new)
             commands::oauth_cmd::get_oauth_credentials,
             commands::oauth_cmd::reload_oauth_credentials,

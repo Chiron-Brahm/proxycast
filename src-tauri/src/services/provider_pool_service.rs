@@ -131,6 +131,7 @@ impl ProviderPoolService {
         check_health: Option<bool>,
         check_model_name: Option<String>,
         not_supported_models: Option<Vec<String>>,
+        proxy_url: Option<String>,
     ) -> Result<ProviderCredential, String> {
         let conn = db.lock().map_err(|e| e.to_string())?;
         let mut cred = ProviderPoolDao::get_by_uuid(&conn, uuid)
@@ -153,6 +154,10 @@ impl ProviderPoolService {
         }
         if let Some(models) = not_supported_models {
             cred.not_supported_models = models;
+        }
+        // 处理 proxy_url：空字符串表示清除，None 表示不修改
+        if let Some(p) = proxy_url {
+            cred.proxy_url = if p.is_empty() { None } else { Some(p) };
         }
         cred.updated_at = Utc::now();
 

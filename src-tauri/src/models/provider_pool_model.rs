@@ -228,6 +228,8 @@ pub struct ProviderCredential {
     /// 凭证来源（手动添加/导入/私有）
     #[serde(default)]
     pub source: CredentialSource,
+    /// 代理 URL（可覆盖全局代理设置）
+    pub proxy_url: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -259,6 +261,7 @@ impl ProviderCredential {
             updated_at: now,
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         }
     }
 
@@ -526,6 +529,8 @@ pub struct CredentialDisplay {
     pub base_url: Option<String>,
     /// API Key 凭证的完整 api_key（仅用于 OpenAI/Claude API Key 类型，用于编辑）
     pub api_key: Option<String>,
+    /// 凭证级代理 URL（可覆盖全局代理设置）
+    pub proxy_url: Option<String>,
 }
 
 /// 获取凭证类型字符串
@@ -623,6 +628,7 @@ impl From<&ProviderCredential> for CredentialDisplay {
             source: cred.source,
             base_url: get_base_url(&cred.credential),
             api_key: get_api_key(&cred.credential),
+            proxy_url: cred.proxy_url.clone(),
         }
     }
 }
@@ -664,7 +670,7 @@ pub struct AddCredentialRequest {
     pub check_model_name: Option<String>,
 }
 
-/// 更新凭证的请求结构
+/// 更新凭证请求
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateCredentialRequest {
     pub name: Option<String>,
@@ -680,6 +686,8 @@ pub struct UpdateCredentialRequest {
     pub new_base_url: Option<String>,
     /// API Key 相关：新的 api_key（仅适用于 API Key 凭证）
     pub new_api_key: Option<String>,
+    /// 新的代理 URL（可覆盖全局代理设置）
+    pub new_proxy_url: Option<String>,
 }
 
 pub type ProviderPools = HashMap<PoolProviderType, Vec<ProviderCredential>>;
@@ -747,6 +755,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         assert!(!cred.supports_model("claude-opus"));
@@ -780,6 +789,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         // Exact match exclusion
@@ -815,6 +825,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         // Prefix wildcard exclusion
@@ -854,6 +865,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         // Contains wildcard exclusion
@@ -890,6 +902,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         // Excluded by not_supported_models (exact match)
@@ -927,6 +940,7 @@ mod tests {
             updated_at: Utc::now(),
             cached_token: None,
             source: CredentialSource::Manual,
+            proxy_url: None,
         };
 
         // All models should be supported since not_supported_models is empty

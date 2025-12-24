@@ -18,7 +18,7 @@ impl ProviderPoolDao {
             "SELECT uuid, provider_type, credential_data, name, is_healthy, is_disabled,
                     check_health, check_model_name, not_supported_models, usage_count, error_count,
                     last_used, last_error_time, last_error_message, last_health_check_time,
-                    last_health_check_model, created_at, updated_at, source
+                    last_health_check_model, created_at, updated_at, source, proxy_url
              FROM provider_pool_credentials
              ORDER BY provider_type, created_at ASC",
         )?;
@@ -41,7 +41,7 @@ impl ProviderPoolDao {
             "SELECT uuid, provider_type, credential_data, name, is_healthy, is_disabled,
                     check_health, check_model_name, not_supported_models, usage_count, error_count,
                     last_used, last_error_time, last_error_message, last_health_check_time,
-                    last_health_check_model, created_at, updated_at, source
+                    last_health_check_model, created_at, updated_at, source, proxy_url
              FROM provider_pool_credentials
              WHERE provider_type = ?1
              ORDER BY created_at ASC",
@@ -67,7 +67,7 @@ impl ProviderPoolDao {
             "SELECT uuid, provider_type, credential_data, name, is_healthy, is_disabled,
                     check_health, check_model_name, not_supported_models, usage_count, error_count,
                     last_used, last_error_time, last_error_message, last_health_check_time,
-                    last_health_check_model, created_at, updated_at, source
+                    last_health_check_model, created_at, updated_at, source, proxy_url
              FROM provider_pool_credentials
              WHERE uuid = ?1",
         )?;
@@ -89,7 +89,7 @@ impl ProviderPoolDao {
             "SELECT uuid, provider_type, credential_data, name, is_healthy, is_disabled,
                     check_health, check_model_name, not_supported_models, usage_count, error_count,
                     last_used, last_error_time, last_error_message, last_health_check_time,
-                    last_health_check_model, created_at, updated_at, source
+                    last_health_check_model, created_at, updated_at, source, proxy_url
              FROM provider_pool_credentials
              WHERE name = ?1",
         )?;
@@ -131,8 +131,8 @@ impl ProviderPoolDao {
              (uuid, provider_type, credential_data, name, is_healthy, is_disabled,
               check_health, check_model_name, not_supported_models, usage_count, error_count,
               last_used, last_error_time, last_error_message, last_health_check_time,
-              last_health_check_model, created_at, updated_at, source)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+              last_health_check_model, created_at, updated_at, source, proxy_url)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
             params![
                 cred.uuid,
                 cred.provider_type.to_string(),
@@ -153,6 +153,7 @@ impl ProviderPoolDao {
                 cred.created_at.timestamp(),
                 cred.updated_at.timestamp(),
                 source_str,
+                cred.proxy_url,
             ],
         )?;
         Ok(())
@@ -171,7 +172,7 @@ impl ProviderPoolDao {
              is_disabled = ?6, check_health = ?7, check_model_name = ?8,
              not_supported_models = ?9, usage_count = ?10, error_count = ?11,
              last_used = ?12, last_error_time = ?13, last_error_message = ?14,
-             last_health_check_time = ?15, last_health_check_model = ?16, updated_at = ?17
+             last_health_check_time = ?15, last_health_check_model = ?16, updated_at = ?17, proxy_url = ?18
              WHERE uuid = ?1",
             params![
                 cred.uuid,
@@ -191,6 +192,7 @@ impl ProviderPoolDao {
                 cred.last_health_check_time.map(|t| t.timestamp()),
                 cred.last_health_check_model,
                 cred.updated_at.timestamp(),
+                cred.proxy_url,
             ],
         )?;
         Ok(())
@@ -305,6 +307,7 @@ impl ProviderPoolDao {
         let created_at_ts: i64 = row.get(16)?;
         let updated_at_ts: i64 = row.get(17)?;
         let source_str: Option<String> = row.get(18).ok();
+        let proxy_url: Option<String> = row.get(19).ok();
 
         let provider_type: PoolProviderType =
             provider_type_str.parse().unwrap_or(PoolProviderType::Kiro);
@@ -351,6 +354,7 @@ impl ProviderPoolDao {
                 .unwrap_or_default(),
             cached_token: None, // 从 get_token_cache 单独获取
             source,
+            proxy_url,
         })
     }
 

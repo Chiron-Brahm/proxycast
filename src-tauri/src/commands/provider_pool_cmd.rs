@@ -493,6 +493,7 @@ pub fn update_provider_pool_credential(
             request.check_health,
             request.check_model_name,
             request.not_supported_models,
+            request.new_proxy_url,
         )?
     };
 
@@ -548,7 +549,7 @@ pub fn toggle_provider_pool_credential(
 ) -> Result<ProviderCredential, String> {
     pool_service
         .0
-        .update_credential(&db, &uuid, None, Some(is_disabled), None, None, None)
+        .update_credential(&db, &uuid, None, Some(is_disabled), None, None, None, None)
 }
 
 /// 重置凭证计数器

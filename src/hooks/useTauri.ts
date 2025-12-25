@@ -464,3 +464,17 @@ export async function setEndpointProvider(
 ): Promise<string> {
   return invoke("set_endpoint_provider", { endpoint: clientType, provider });
 }
+
+// Network Info
+export interface NetworkInfo {
+  localhost: string;
+  lan_ip: string | null;
+}
+
+/**
+ * 获取本地网络信息
+ * @returns 本地和内网 IP 地址
+ */
+export async function getNetworkInfo(): Promise<NetworkInfo> {
+  return invoke("get_network_info");
+}

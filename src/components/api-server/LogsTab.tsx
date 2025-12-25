@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Download, ArrowUp } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import { getLogs, clearLogs, LogEntry } from "@/hooks/useTauri";
 
 export function LogsTab() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const logsEndRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,29 +12,24 @@ export function LogsTab() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (autoScroll && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs, autoScroll]);
-
-  const handleScroll = () => {
-    if (logsContainerRef.current) {
-      setShowScrollTop(logsContainerRef.current.scrollTop > 200);
-    }
-  };
-
-  const scrollToTop = () => {
-    if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
-      setAutoScroll(false);
-    }
-  };
-
   const fetchLogs = async () => {
     try {
       const l = await getLogs();
-      setLogs(l);
+      // 过滤掉 API 调用相关的日志，只保留系统日志
+      // API 调用日志已由 Flow Monitor 接管
+      const systemLogs = l.filter((log) => {
+        const msg = log.message;
+        // 排除 API 请求相关日志
+        if (msg.includes("[REQ]")) return false;
+        if (msg.includes("[ROUTE]")) return false;
+        if (msg.includes("[CLIENT]")) return false;
+        if (msg.includes("request_id=")) return false;
+        if (msg.includes("POST /v1/")) return false;
+        if (msg.includes("GET /v1/")) return false;
+        if (msg.includes("Using pool credential")) return false;
+        return true;
+      });
+      setLogs(systemLogs);
     } catch (e) {
       // 如果后端还没实现，使用空数组
       console.error(e);
@@ -95,38 +87,28 @@ export function LogsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-end gap-2">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={autoScroll}
-            onChange={(e) => setAutoScroll(e.target.checked)}
-            className="rounded"
-          />
-          自动滚动
-        </label>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+          className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:bg-muted"
         >
           <Download className="h-4 w-4" />
           导出
         </button>
         <button
           onClick={handleClear}
-          className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+          className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:bg-muted"
         >
           <Trash2 className="h-4 w-4" />
           清空
         </button>
       </div>
 
-      <div className="rounded-lg border bg-card relative">
+      <div className="rounded-lg border bg-card">
         <div
           ref={logsContainerRef}
-          onScroll={handleScroll}
-          className="max-h-[600px] overflow-auto p-4 font-mono text-sm"
+          className="max-h-[500px] overflow-auto p-4 font-mono text-xs"
         >
           {logs.length === 0 ? (
             <p className="text-center text-muted-foreground">
@@ -136,7 +118,7 @@ export function LogsTab() {
             logs.map((log, i) => (
               <div
                 key={i}
-                className={`flex gap-2 py-1 px-2 rounded ${getLevelBg(log.level)}`}
+                className={`flex gap-2 py-0.5 px-2 rounded ${getLevelBg(log.level)}`}
               >
                 <span className="text-muted-foreground shrink-0">
                   {new Date(log.timestamp).toLocaleTimeString()}
@@ -150,17 +132,7 @@ export function LogsTab() {
               </div>
             ))
           )}
-          <div ref={logsEndRef} />
         </div>
-        {showScrollTop && (
-          <button
-            onClick={scrollToTop}
-            className="absolute bottom-4 right-4 rounded-full bg-primary p-2 text-primary-foreground shadow-lg hover:bg-primary/90"
-            title="回到顶部"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </button>
-        )}
       </div>
     </div>
   );

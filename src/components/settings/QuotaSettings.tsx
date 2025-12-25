@@ -1,11 +1,16 @@
+/**
+ * @file QuotaSettings.tsx
+ * @description 配额超限策略设置
+ */
 import { useState, useEffect } from "react";
-import { RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   getConfig,
   saveConfig,
   Config,
   QuotaExceededConfig,
 } from "@/hooks/useTauri";
+import { cn } from "@/lib/utils";
 
 export function QuotaSettings() {
   const [config, setConfig] = useState<Config | null>(null);
@@ -34,11 +39,11 @@ export function QuotaSettings() {
     setMessage(null);
     try {
       await saveConfig(config);
-      setMessage({ type: "success", text: "配额设置已保存" });
-      setTimeout(() => setMessage(null), 3000);
+      setMessage({ type: "success", text: "已保存" });
+      setTimeout(() => setMessage(null), 2000);
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e);
-      setMessage({ type: "error", text: `保存失败: ${errorMessage}` });
+      setMessage({ type: "error", text: `失败: ${errorMessage}` });
     }
     setSaving(false);
   };
@@ -53,8 +58,8 @@ export function QuotaSettings() {
 
   if (!config) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center h-20">
+        <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -62,44 +67,35 @@ export function QuotaSettings() {
   const quota = config.quota_exceeded;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <RefreshCw className="h-5 w-5 text-orange-500" />
-        <div>
-          <h3 className="text-sm font-medium">配额超限策略</h3>
-          <p className="text-xs text-muted-foreground">
-            配置配额超限时的自动切换行为
-          </p>
+    <div className="rounded-lg border p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium">配额超限策略</h3>
+        <div className="flex items-center gap-2">
+          {message && (
+            <span
+              className={cn(
+                "text-xs px-2 py-0.5 rounded",
+                message.type === "error"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+              )}
+            >
+              {message.text}
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-3 py-1 rounded bg-primary text-primary-foreground text-xs hover:bg-primary/90 disabled:opacity-50"
+          >
+            {saving ? "..." : "保存"}
+          </button>
         </div>
       </div>
 
-      {/* 消息提示 */}
-      {message && (
-        <div
-          className={`rounded-lg border p-3 text-sm flex items-center gap-2 ${
-            message.type === "error"
-              ? "border-destructive bg-destructive/10 text-destructive"
-              : "border-green-500 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-          }`}
-        >
-          {message.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4" />
-          ) : (
-            <AlertTriangle className="h-4 w-4" />
-          )}
-          {message.text}
-        </div>
-      )}
-
-      <div className="p-4 rounded-lg border space-y-4">
-        {/* 自动切换凭证 */}
-        <label className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted/50">
-          <div>
-            <span className="text-sm font-medium">自动切换凭证</span>
-            <p className="text-xs text-muted-foreground">
-              配额超限时自动切换到下一个可用凭证
-            </p>
-          </div>
+      <div className="space-y-2">
+        <label className="flex items-center justify-between py-1.5 cursor-pointer">
+          <span className="text-sm">自动切换凭证</span>
           <input
             type="checkbox"
             checked={quota.switch_project}
@@ -108,14 +104,8 @@ export function QuotaSettings() {
           />
         </label>
 
-        {/* 尝试预览模型 */}
-        <label className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted/50">
-          <div>
-            <span className="text-sm font-medium">尝试预览模型</span>
-            <p className="text-xs text-muted-foreground">
-              主模型配额超限时尝试使用预览版本
-            </p>
-          </div>
+        <label className="flex items-center justify-between py-1.5 cursor-pointer border-t pt-2">
+          <span className="text-sm">尝试预览模型</span>
           <input
             type="checkbox"
             checked={quota.switch_preview_model}
@@ -126,32 +116,23 @@ export function QuotaSettings() {
           />
         </label>
 
-        {/* 冷却时间 */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            冷却时间（秒）
-          </label>
-          <input
-            type="number"
-            min={0}
-            value={quota.cooldown_seconds}
-            onChange={(e) =>
-              updateQuota({ cooldown_seconds: parseInt(e.target.value) || 300 })
-            }
-            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            凭证配额超限后的恢复等待时间，默认 300 秒
-          </p>
+        <div className="flex items-center justify-between py-1.5 border-t pt-2">
+          <span className="text-sm">冷却时间</span>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              value={quota.cooldown_seconds}
+              onChange={(e) =>
+                updateQuota({
+                  cooldown_seconds: parseInt(e.target.value) || 300,
+                })
+              }
+              className="w-20 px-2 py-1 rounded border bg-background text-sm text-right focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none"
+            />
+            <span className="text-xs text-muted-foreground">秒</span>
+          </div>
         </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-        >
-          {saving ? "保存中..." : "保存配额设置"}
-        </button>
       </div>
     </div>
   );

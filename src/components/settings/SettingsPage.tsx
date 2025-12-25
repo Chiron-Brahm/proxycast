@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { GeneralSettings } from "./GeneralSettings";
-import { ProxySettings } from "./ProxySettings";
 import { DirectorySettings } from "./DirectorySettings";
 import { AboutSection } from "./AboutSection";
 import { TlsSettings } from "./TlsSettings";
@@ -12,20 +11,18 @@ import { RoutingSettings } from "./RoutingSettings";
 
 type SettingsTab =
   | "general"
-  | "proxy"
   | "security"
   | "advanced"
   | "extensions"
   | "routing"
   | "about";
 
-const tabs: { id: SettingsTab; label: string }[] = [
+const tabs: { id: SettingsTab; label: string; experimental?: boolean }[] = [
   { id: "general", label: "通用" },
-  { id: "proxy", label: "代理服务" },
   { id: "security", label: "安全" },
   { id: "advanced", label: "高级" },
-  { id: "extensions", label: "扩展" },
-  { id: "routing", label: "路由管理 (实验)" },
+  { id: "extensions", label: "扩展", experimental: true },
+  { id: "routing", label: "路由管理", experimental: true },
   { id: "about", label: "关于" },
 ];
 
@@ -53,6 +50,9 @@ export function SettingsPage() {
             )}
           >
             {tab.label}
+            {tab.experimental && (
+              <span className="text-[8px] text-red-500 ml-1">(实验)</span>
+            )}
             {activeTab === tab.id && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -63,7 +63,6 @@ export function SettingsPage() {
       {/* 内容区域 */}
       <div className="flex-1 overflow-auto">
         {activeTab === "general" && <GeneralSettings />}
-        {activeTab === "proxy" && <ProxySettings />}
         {activeTab === "security" && (
           <div className="space-y-6 max-w-2xl">
             <TlsSettings />
@@ -71,7 +70,7 @@ export function SettingsPage() {
           </div>
         )}
         {activeTab === "advanced" && (
-          <div className="space-y-6 max-w-2xl">
+          <div className="space-y-4 max-w-2xl">
             <DirectorySettings />
             <QuotaSettings />
           </div>

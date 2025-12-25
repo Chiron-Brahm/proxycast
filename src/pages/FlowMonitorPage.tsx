@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   Activity,
-  RefreshCw,
   Download,
   BarChart3,
   List,
@@ -100,11 +99,6 @@ export function FlowMonitorPage() {
     setSelectedFlow(null);
   }, []);
 
-  // 刷新数据
-  const handleRefresh = useCallback(() => {
-    setRefreshKey((prev) => prev + 1);
-  }, []);
-
   // 导出单个 Flow
   const handleExportFlow = useCallback(
     (flowId: string, _format: ExportFormat) => {
@@ -128,8 +122,8 @@ export function FlowMonitorPage() {
   // 清理成功
   const handleCleanupSuccess = useCallback(() => {
     // 清理成功后刷新数据
-    handleRefresh();
-  }, [handleRefresh]);
+    setRefreshKey((prev) => prev + 1);
+  }, []);
 
   // 设置窗口大小
   const handleSetWindowSize = useCallback(async (optionId: string) => {
@@ -265,15 +259,6 @@ export function FlowMonitorPage() {
             <Trash2 className="h-4 w-4 text-red-500" />
             清理
           </button>
-
-          {/* 刷新按钮 */}
-          <button
-            onClick={handleRefresh}
-            className="flex items-center gap-1 rounded-lg border px-3 py-2 text-sm hover:bg-muted"
-          >
-            <RefreshCw className="h-4 w-4" />
-            刷新
-          </button>
         </div>
       </div>
 
@@ -295,7 +280,6 @@ export function FlowMonitorPage() {
               key={refreshKey}
               filter={filter}
               onFlowSelect={handleFlowSelect}
-              onRefresh={handleRefresh}
               enableRealtime={true}
             />
           ) : (
@@ -303,7 +287,6 @@ export function FlowMonitorPage() {
               key={refreshKey}
               filter={filter}
               autoRefreshInterval={30000}
-              onRefresh={handleRefresh}
             />
           )}
         </>

@@ -88,7 +88,7 @@ export const ConfigPage = forwardRef<ConfigPageRef, ConfigPageProps>(
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         {!hideHeader && (
           <div className="flex items-center justify-between">
             <div>
@@ -96,8 +96,16 @@ export const ConfigPage = forwardRef<ConfigPageRef, ConfigPageProps>(
                 <FileCode className="h-6 w-6" />
                 配置管理
               </h2>
-              <p className="text-muted-foreground">
-                编辑 YAML 配置文件，导入导出配置
+              <p className="text-muted-foreground text-sm">
+                编辑 YAML 配置文件。实验功能，不影响核心使用，
+                <a
+                  href="https://github.com/aiclientproxy/proxycast/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  问题反馈
+                </a>
               </p>
             </div>
             <div className="flex items-center gap-2">

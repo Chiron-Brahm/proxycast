@@ -2241,6 +2241,8 @@ pub fn run() {
             commands::window_cmd::is_fullscreen,
             // Auto fix commands
             commands::auto_fix_cmd::auto_fix_configuration,
+            // Network commands
+            commands::network_cmd::get_network_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

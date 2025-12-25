@@ -41,10 +41,10 @@ export function AppTabs({ activeApp, onAppChange }: AppTabsProps) {
           key={app.id}
           onClick={() => onAppChange(app.id)}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-medium transition-colors",
+            "flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors",
             activeApp === app.id
-              ? "bg-primary text-primary-foreground"
-              : "hover:bg-muted text-muted-foreground",
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground",
           )}
           title={app.description}
         >

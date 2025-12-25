@@ -1,4 +1,4 @@
-import { Check, Edit2, Trash2, Zap } from "lucide-react";
+import { Check, Edit2, Trash2 } from "lucide-react";
 import { Provider } from "@/lib/api/switch";
 import { cn } from "@/lib/utils";
 import { ProviderIcon } from "@/icons/providers";
@@ -50,44 +50,70 @@ export function ProviderCard({
   onEdit,
   onDelete,
 }: ProviderCardProps) {
+  const isProxyCast =
+    provider.category === "custom" && provider.name === "ProxyCast";
+
   return (
     <div
+      onClick={() => !isCurrent && onSwitch()}
       className={cn(
-        "relative rounded-lg border p-4 transition-all",
+        "group relative rounded-xl border p-3 transition-all cursor-pointer",
         isCurrent
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
-          : "hover:border-muted-foreground/50",
+          ? "border-primary bg-gradient-to-r from-primary/10 to-transparent shadow-sm"
+          : "hover:border-primary/50 hover:shadow-md",
       )}
     >
+      {/* 选中标记 */}
       {isCurrent && (
-        <div className="absolute -top-2 -right-2 rounded-full bg-primary p-1">
+        <div className="absolute -top-1.5 -right-1.5 rounded-full bg-primary p-1 shadow-sm">
           <Check className="h-3 w-3 text-primary-foreground" />
         </div>
       )}
 
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-            <ProviderIcon
-              providerType={getProviderTypeFromName(
-                provider.name,
-                provider.category || "",
-              )}
-              size={24}
-              showFallback={true}
-            />
-          </div>
-          <div>
-            <h3 className="font-medium">{provider.name}</h3>
+      <div className="flex items-center gap-3">
+        {/* 图标 */}
+        <div
+          className={cn(
+            "shrink-0 h-10 w-10 rounded-lg flex items-center justify-center",
+            isCurrent ? "bg-primary/20" : "bg-muted",
+          )}
+        >
+          <ProviderIcon
+            providerType={getProviderTypeFromName(
+              provider.name,
+              provider.category || "",
+            )}
+            size={22}
+            showFallback={true}
+          />
+        </div>
+
+        {/* 名称和分类 */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium truncate">{provider.name}</h3>
             {provider.category && (
-              <span className="text-xs text-muted-foreground">
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                 {provider.category}
               </span>
             )}
           </div>
+          {isProxyCast ? (
+            <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
+              凭证池 → 标准 API
+            </p>
+          ) : provider.notes ? (
+            <p className="text-xs text-muted-foreground truncate">
+              {provider.notes}
+            </p>
+          ) : null}
         </div>
 
-        <div className="flex gap-1">
+        {/* 操作按钮 */}
+        <div
+          className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={onEdit}
             className="p-1.5 rounded hover:bg-muted"
@@ -96,12 +122,7 @@ export function ProviderCard({
             <Edit2 className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isCurrent) {
-                onDelete();
-              }
-            }}
+            onClick={() => !isCurrent && onDelete()}
             disabled={isCurrent}
             className={cn(
               "p-1.5 rounded text-destructive",
@@ -114,31 +135,6 @@ export function ProviderCard({
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
-      </div>
-
-      {provider.category === "custom" && provider.name === "ProxyCast" && (
-        <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-          本地代理服务，将凭证池中的凭证转换为标准 API
-        </p>
-      )}
-      {provider.notes && (
-        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-          {provider.notes}
-        </p>
-      )}
-
-      <div className="mt-4">
-        {isCurrent ? (
-          <span className="text-sm text-primary font-medium">当前使用中</span>
-        ) : (
-          <button
-            onClick={onSwitch}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <Zap className="h-3.5 w-3.5" />
-            切换到此配置
-          </button>
-        )}
       </div>
     </div>
   );

@@ -19,11 +19,19 @@ export function ExtensionsSettings() {
   const [activeTab, setActiveTab] = useState<Tab>("mcp");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h3 className="text-lg font-semibold">扩展管理</h3>
-        <p className="text-muted-foreground">
-          管理 MCP 服务器、Prompts 和 Skills
+        <p className="text-muted-foreground text-sm">
+          管理 MCP 服务器、Prompts 和 Skills。实验功能，不影响核心使用，
+          <a
+            href="https://github.com/aiclientproxy/proxycast/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            问题反馈
+          </a>
         </p>
       </div>
 

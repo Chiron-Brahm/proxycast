@@ -7,18 +7,57 @@ import { ConfigPage } from "./ConfigPage";
 type Tab = "switch" | "config";
 
 const tabs = [
-  { id: "switch" as Tab, label: "配置切换", icon: Monitor },
-  { id: "config" as Tab, label: "配置文件", icon: FileCode },
+  {
+    id: "switch" as Tab,
+    label: "配置切换",
+    icon: Monitor,
+    experimental: false,
+  },
+  {
+    id: "config" as Tab,
+    label: "配置文件",
+    icon: FileCode,
+    experimental: true,
+  },
 ];
 
 export function ConfigManagementPage() {
   const [activeTab, setActiveTab] = useState<Tab>("switch");
 
+  // 根据当前 tab 显示不同的描述
+  const getDescription = () => {
+    if (activeTab === "switch") {
+      return (
+        <>
+          一键切换 API 配置，可独立使用。添加 "ProxyCast" 可将凭证池转为标准
+          API（
+          <code className="px-1 py-0.5 rounded bg-muted text-xs">
+            localhost:8999
+          </code>
+          ）
+        </>
+      );
+    }
+    return (
+      <>
+        编辑 YAML 配置文件。实验功能，不影响核心使用，
+        <a
+          href="https://github.com/aiclientproxy/proxycast/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          问题反馈
+        </a>
+      </>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold">配置管理</h2>
-        <p className="text-muted-foreground">管理客户端配置和配置文件</p>
+        <p className="text-muted-foreground text-sm">{getDescription()}</p>
       </div>
 
       {/* Tab 切换 */}
@@ -36,6 +75,9 @@ export function ConfigManagementPage() {
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
+            {tab.experimental && (
+              <span className="text-[8px] text-red-500">(实验)</span>
+            )}
           </button>
         ))}
       </div>

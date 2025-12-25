@@ -14,7 +14,6 @@ import { AddCredentialModal } from "./AddCredentialModal";
 import { EditCredentialModal } from "./EditCredentialModal";
 import { ErrorDisplay, useErrorDisplay } from "./ErrorDisplay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { HelpTip } from "@/components/HelpTip";
 import { getConfig, saveConfig, Config } from "@/hooks/useTauri";
 import { VertexAISection } from "./VertexAISection";
 import { AmpConfigSection } from "./AmpConfigSection";
@@ -322,52 +321,23 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">凭证池</h2>
-            <p className="text-muted-foreground">
-              管理多个 AI 服务凭证，支持负载均衡和健康检测
+            <p className="text-muted-foreground text-sm">
+              管理多个 AI 服务凭证，自动轮询负载均衡。在 API Server 选择默认
+              Provider 后自动使用对应凭证
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleMigratePrivateConfig}
-              disabled={migrating || loading}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
-              title="从高级设置导入 Private 凭证"
-            >
-              <Download
-                className={`h-4 w-4 ${migrating ? "animate-pulse" : ""}`}
-              />
-              导入配置
-            </button>
-            <button
-              onClick={refresh}
-              disabled={loading}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-              刷新
-            </button>
-          </div>
+          <button
+            onClick={handleMigratePrivateConfig}
+            disabled={migrating || loading}
+            className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+            title="从高级设置导入 Private 凭证"
+          >
+            <Download
+              className={`h-4 w-4 ${migrating ? "animate-pulse" : ""}`}
+            />
+            导入配置
+          </button>
         </div>
-
-        <HelpTip title="什么是凭证池？" variant="amber">
-          <ul className="list-disc list-inside space-y-1 text-sm text-amber-700 dark:text-amber-400">
-            <li>
-              <span className="font-medium">Kiro/Gemini/Qwen</span>
-              ：上传对应工具的凭证文件，ProxyCast 会自动管理 Token 刷新
-            </li>
-            <li>
-              <span className="font-medium">OpenAI/Claude</span>：直接填入 API
-              Key，用于转发请求
-            </li>
-            <li>多个凭证会自动轮询负载均衡，单个凭证失效不影响服务</li>
-            <li>
-              在 <span className="font-medium">API Server</span> 页面选择默认
-              Provider 后，请求会自动使用对应凭证池
-            </li>
-          </ul>
-        </HelpTip>
 
         {error && (
           <div className="rounded-lg border border-red-500 bg-red-50 p-4 text-red-700 dark:bg-red-950/30">
@@ -382,10 +352,10 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
               setActiveCategory("oauth");
               setActiveTab(oauthProviderTypes[0]);
             }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
               activeCategory === "oauth"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             OAuth 凭证
@@ -395,10 +365,10 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
               setActiveCategory("apikey");
               setActiveTab(apiKeyProviderTypes[0]);
             }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
               activeCategory === "apikey"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             API Key
@@ -408,10 +378,10 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
               setActiveCategory("config");
               setActiveTab("vertex");
             }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
               activeCategory === "config"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             其他配置
@@ -429,7 +399,7 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
                   key={providerType}
                   onClick={() => setActiveTab(providerType)}
                   title={providerLabels[providerType]}
-                  className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                  className={`group relative flex items-center justify-center gap-2 min-w-[120px] px-3 py-2 rounded-lg border transition-all ${
                     isActive
                       ? "border-primary bg-primary/10 text-primary shadow-sm"
                       : "border-border bg-card hover:border-primary/50 hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -465,7 +435,7 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
                   key={providerType}
                   onClick={() => setActiveTab(providerType)}
                   title={providerLabels[providerType]}
-                  className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                  className={`group relative flex items-center justify-center gap-2 min-w-[120px] px-3 py-2 rounded-lg border transition-all ${
                     isActive
                       ? "border-primary bg-primary/10 text-primary shadow-sm"
                       : "border-border bg-card hover:border-primary/50 hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -499,7 +469,7 @@ export const ProviderPoolPage = forwardRef<ProviderPoolPageRef>(
                 <button
                   key={tabId}
                   onClick={() => setActiveTab(tabId)}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  className={`min-w-[120px] px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                     isActive
                       ? "border-primary bg-primary/10 text-primary shadow-sm"
                       : "border-border bg-card hover:border-primary/50 hover:bg-muted text-muted-foreground hover:text-foreground"

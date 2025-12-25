@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Route, Shield, AlertTriangle } from "lucide-react";
+import { Route, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoutingPage } from "../routing/RoutingPage";
 import { ResiliencePage } from "../resilience/ResiliencePage";
@@ -15,17 +15,19 @@ export function RoutingSettings() {
   const [activeTab, setActiveTab] = useState<Tab>("routing");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">路由管理</h3>
-          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md">
-            <AlertTriangle className="h-3 w-3" />
-            实验功能
-          </div>
-        </div>
-        <p className="text-muted-foreground">
-          配置智能路由规则和容错策略（实验性功能，可能不稳定）
+        <h3 className="text-lg font-semibold">路由管理</h3>
+        <p className="text-muted-foreground text-sm">
+          配置智能路由规则和容错策略。实验功能，不影响核心使用，
+          <a
+            href="https://github.com/aiclientproxy/proxycast/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            问题反馈
+          </a>
         </p>
       </div>
 

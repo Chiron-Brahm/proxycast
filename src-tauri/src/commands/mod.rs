@@ -3,6 +3,7 @@ pub mod config_cmd;
 pub mod flow_monitor_cmd;
 pub mod injection_cmd;
 pub mod mcp_cmd;
+pub mod network_cmd;
 pub mod oauth_cmd;
 pub mod plugin_cmd;
 pub mod prompt_cmd;

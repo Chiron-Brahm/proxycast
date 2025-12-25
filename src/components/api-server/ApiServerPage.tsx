@@ -1,20 +1,14 @@
 import { useState, useEffect } from "react";
 import {
-  Activity,
-  Server,
-  Zap,
-  Clock,
   Play,
   Copy,
   Check,
   ChevronDown,
   ChevronUp,
-  Settings,
   RefreshCw,
 } from "lucide-react";
 import { LogsTab } from "./LogsTab";
 import { RoutesTab } from "./RoutesTab";
-import { HelpTip } from "@/components/HelpTip";
 import { ProviderIcon } from "@/icons/providers";
 import {
   startServer,
@@ -29,6 +23,8 @@ import {
   TestResult,
   getDefaultProvider,
   setDefaultProvider,
+  getNetworkInfo,
+  NetworkInfo,
 } from "@/hooks/useTauri";
 import { providerPoolApi, ProviderPoolOverview } from "@/lib/api/providerPool";
 
@@ -61,6 +57,9 @@ export function ApiServerPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // 网络信息
+  const [networkInfo, setNetworkInfo] = useState<NetworkInfo | null>(null);
 
   // 自动清除消息
   useEffect(() => {
@@ -96,10 +95,20 @@ export function ApiServerPage() {
     fetchStatus();
     fetchConfig();
     loadDefaultProvider();
+    loadNetworkInfo();
 
     const statusInterval = setInterval(fetchStatus, 3000);
     return () => clearInterval(statusInterval);
   }, []);
+
+  const loadNetworkInfo = async () => {
+    try {
+      const info = await getNetworkInfo();
+      setNetworkInfo(info);
+    } catch (e) {
+      console.error("Failed to get network info:", e);
+    }
+  };
 
   const loadDefaultProvider = async () => {
     try {
@@ -226,12 +235,6 @@ export function ApiServerPage() {
       const errMsg = e instanceof Error ? e.message : String(e);
       setProviderSwitchMsg(`切换失败: ${errMsg}`);
     }
-  };
-
-  const formatUptime = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    return `${h}h ${m}m`;
   };
 
   const serverUrl = status
@@ -435,36 +438,42 @@ export function ApiServerPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">API Server</h2>
-        <p className="text-muted-foreground">
-          本地代理服务器，将凭证池中的凭证转换为标准 API
-        </p>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold">API Server</h2>
+          <p className="text-muted-foreground text-sm">
+            本地代理服务器，支持 OpenAI/Anthropic 格式
+            {networkInfo && (
+              <>
+                {" "}
+                <code className="px-1 py-0.5 rounded bg-muted text-xs">
+                  {networkInfo.localhost}:{config?.server.port ?? 8999}
+                </code>
+                {networkInfo.lan_ip && (
+                  <>
+                    {" | "}
+                    <code className="px-1 py-0.5 rounded bg-muted text-xs">
+                      {networkInfo.lan_ip}:{config?.server.port ?? 8999}
+                    </code>
+                    <span className="text-xs"> (局域网)</span>
+                  </>
+                )}
+              </>
+            )}
+            <span className="ml-2">
+              <span
+                className={`inline-block h-2 w-2 rounded-full ${status?.running ? "bg-green-500" : "bg-red-500"}`}
+              />{" "}
+              {status?.running ? "运行中" : "已停止"}
+              {" · "}
+              {status?.requests || 0} 请求
+              {" · "}
+              <span className="capitalize">{defaultProvider}</span>
+            </span>
+          </p>
+        </div>
       </div>
-
-      <HelpTip title="如何使用 API Server？" variant="green">
-        <ul className="list-disc list-inside space-y-1 text-sm text-green-700 dark:text-green-400">
-          <li>
-            启动服务后，API 地址为{" "}
-            <code className="px-1 py-0.5 rounded bg-green-100 dark:bg-green-900">
-              http://localhost:8999
-            </code>
-          </li>
-          <li>
-            支持 OpenAI 格式{" "}
-            <code className="px-1 py-0.5 rounded bg-green-100 dark:bg-green-900">
-              /v1/chat/completions
-            </code>{" "}
-            和 Anthropic 格式{" "}
-            <code className="px-1 py-0.5 rounded bg-green-100 dark:bg-green-900">
-              /v1/messages
-            </code>
-          </li>
-          <li>在下方选择"默认 Provider"，请求会自动使用该类型凭证池中的凭证</li>
-          <li>可在 Claude Code、Cherry Studio、Cursor 等工具中配置使用</li>
-        </ul>
-      </HelpTip>
 
       {message && (
         <div
@@ -482,50 +491,6 @@ export function ApiServerPage() {
           {message.text}
         </div>
       )}
-
-      {/* Status Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">状态</span>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <div
-              className={`h-2 w-2 rounded-full ${status?.running ? "bg-green-500" : "bg-red-500"}`}
-            />
-            <span className="font-medium">
-              {status?.running ? "运行中" : "已停止"}
-            </span>
-          </div>
-        </div>
-
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">请求数</span>
-          </div>
-          <div className="mt-2 text-2xl font-bold">{status?.requests || 0}</div>
-        </div>
-
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">运行时间</span>
-          </div>
-          <div className="mt-2 font-medium">
-            {formatUptime(status?.uptime_secs || 0)}
-          </div>
-        </div>
-
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">默认 Provider</span>
-          </div>
-          <div className="mt-2 font-medium capitalize">{defaultProvider}</div>
-        </div>
-      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b overflow-x-auto">
@@ -550,16 +515,12 @@ export function ApiServerPage() {
 
       {/* Server Control Tab */}
       {activeTab === "server" && (
-        <div className="space-y-6">
-          {/* Server Control */}
-          <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-4 font-semibold flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              服务控制
-            </h3>
-            <div className="flex items-center gap-4 mb-4">
+        <div className="space-y-4">
+          {/* Server Control - 紧凑版 */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-4">
               <button
-                className={`rounded-lg px-6 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${
                   status?.running
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-green-600 hover:bg-green-700"
@@ -573,79 +534,60 @@ export function ApiServerPage() {
                     ? "停止服务"
                     : "启动服务"}
               </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="block text-muted-foreground mb-1">端口</label>
-                <input
-                  type="number"
-                  value={editPort}
-                  onChange={(e) => setEditPort(e.target.value)}
-                  className="w-full rounded-lg border bg-background px-3 py-2"
-                />
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">端口:</span>
+                  <input
+                    type="number"
+                    value={editPort}
+                    onChange={(e) => setEditPort(e.target.value)}
+                    className="w-20 rounded border bg-background px-2 py-1 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">API Key:</span>
+                  <input
+                    type="text"
+                    value={editApiKey}
+                    onChange={(e) => setEditApiKey(e.target.value)}
+                    className="w-40 rounded border bg-background px-2 py-1 text-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleSaveServerConfig}
+                  disabled={loading}
+                  className="rounded border px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
+                >
+                  保存
+                </button>
               </div>
-              <div>
-                <label className="block text-muted-foreground mb-1">
-                  API Key
-                </label>
-                <input
-                  type="text"
-                  value={editApiKey}
-                  onChange={(e) => setEditApiKey(e.target.value)}
-                  className="w-full rounded-lg border bg-background px-3 py-2"
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                API 地址:{" "}
-                <code className="rounded bg-muted px-2 py-1">{serverUrl}</code>
-              </div>
-              <button
-                onClick={handleSaveServerConfig}
-                disabled={loading}
-                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              >
-                保存配置
-              </button>
             </div>
           </div>
 
-          {/* Default Provider */}
-          <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-4 font-semibold">默认 Provider</h3>
-            <p className="mb-3 text-xs text-muted-foreground">
-              选择默认使用的凭证池类型，请求会自动从该类型的凭证池中轮询选择可用凭证
-            </p>
-            {providerSwitchMsg && (
-              <div className="mb-3 flex items-center gap-2 rounded-lg border border-green-500 bg-green-50 p-2 text-sm text-green-700 dark:bg-green-950/30">
-                <Check className="h-4 w-4" />
-                {providerSwitchMsg}
-              </div>
-            )}
+          {/* Default Provider - 紧凑版 */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-medium text-sm">默认 Provider</span>
+              {providerSwitchMsg && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  {providerSwitchMsg}
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {(
                 [
-                  { id: "kiro", label: "Kiro (AWS)", iconType: "kiro" },
-                  {
-                    id: "gemini",
-                    label: "Gemini (Google)",
-                    iconType: "gemini",
-                  },
-                  { id: "qwen", label: "Qwen (阿里)", iconType: "qwen" },
+                  { id: "kiro", label: "Kiro", iconType: "kiro" },
+                  { id: "gemini", label: "Gemini", iconType: "gemini" },
+                  { id: "qwen", label: "Qwen", iconType: "qwen" },
                   {
                     id: "antigravity",
-                    label: "Antigravity (Gemini 3 Pro)",
+                    label: "Antigravity",
                     iconType: "gemini",
                   },
                   { id: "openai", label: "OpenAI", iconType: "openai" },
-                  {
-                    id: "claude",
-                    label: "Claude (Anthropic)",
-                    iconType: "claude",
-                  },
+                  { id: "claude", label: "Claude", iconType: "claude" },
                 ] as const
               ).map((p) => {
                 const overview = poolOverview.find(
@@ -657,16 +599,16 @@ export function ApiServerPage() {
                     key={p.id}
                     onClick={() => handleSetDefaultProvider(p.id)}
                     disabled={loading}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                       defaultProvider === p.id
-                        ? "bg-primary text-primary-foreground"
-                        : "border hover:bg-muted"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground"
                     } disabled:opacity-50`}
                   >
-                    <ProviderIcon providerType={p.iconType} size={16} />
+                    <ProviderIcon providerType={p.iconType} size={14} />
                     {p.label}
                     {count > 0 && (
-                      <span className="ml-1 text-xs opacity-70">({count})</span>
+                      <span className="text-xs opacity-70">({count})</span>
                     )}
                   </button>
                 );

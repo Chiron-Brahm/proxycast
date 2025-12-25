@@ -21,6 +21,30 @@ pub struct CWParsedResponse {
     pub context_usage_percentage: f64,
 }
 
+impl CWParsedResponse {
+    /// 估算 Token 使用量
+    ///
+    /// 基于响应内容长度和上下文使用百分比估算 Token 数量：
+    /// - output_tokens: 基于响应内容长度（约 4 字符 = 1 token）
+    /// - input_tokens: 基于 context_usage_percentage（假设 100% = 200k tokens）
+    ///
+    /// # 返回
+    /// (input_tokens, output_tokens) 元组
+    pub fn estimate_tokens(&self) -> (u32, u32) {
+        // 估算 output tokens: 基于响应内容长度 (约 4 字符 = 1 token)
+        let mut output_tokens: u32 = (self.content.len() / 4) as u32;
+        for tc in &self.tool_calls {
+            output_tokens += (tc.function.arguments.len() / 4) as u32;
+        }
+
+        // 从 context_usage_percentage 估算 input tokens
+        // 假设 100% = 200k tokens (Claude 的上下文窗口)
+        let input_tokens = ((self.context_usage_percentage / 100.0) * 200000.0) as u32;
+
+        (input_tokens, output_tokens)
+    }
+}
+
 /// 安全截断字符串到指定字符数，避免 UTF-8 边界问题
 pub fn safe_truncate(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();

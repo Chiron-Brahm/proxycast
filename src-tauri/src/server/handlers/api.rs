@@ -1232,8 +1232,13 @@ pub async fn chat_completions(
                                             // 完成 Flow 捕获并检查响应拦截（重试成功）
                                             // **Validates: Requirements 2.1, 2.5**
                                             if let Some(fid) = &flow_id {
-                                                let llm_response =
-                                                    build_llm_response(200, &parsed.content, None);
+                                                let (est_input, est_output) =
+                                                    parsed.estimate_tokens();
+                                                let llm_response = build_llm_response(
+                                                    200,
+                                                    &parsed.content,
+                                                    Some((est_input, est_output)),
+                                                );
 
                                                 // 检查是否需要拦截响应
                                                 if let Some(modified_response) =
@@ -1896,7 +1901,12 @@ pub async fn anthropic_messages(
                             // 完成 Flow 捕获并检查响应拦截（流式）
                             // **Validates: Requirements 2.1, 2.5**
                             if let Some(fid) = &flow_id {
-                                let llm_response = build_llm_response(200, &parsed.content, None);
+                                let (est_input, est_output) = parsed.estimate_tokens();
+                                let llm_response = build_llm_response(
+                                    200,
+                                    &parsed.content,
+                                    Some((est_input, est_output)),
+                                );
 
                                 // 检查是否需要拦截响应
                                 if let Some(modified_response) = check_response_intercept(
@@ -1955,7 +1965,12 @@ pub async fn anthropic_messages(
                         // 完成 Flow 捕获并检查响应拦截（非流式）
                         // **Validates: Requirements 2.1, 2.5**
                         if let Some(fid) = &flow_id {
-                            let llm_response = build_llm_response(200, &parsed.content, None);
+                            let (est_input, est_output) = parsed.estimate_tokens();
+                            let llm_response = build_llm_response(
+                                200,
+                                &parsed.content,
+                                Some((est_input, est_output)),
+                            );
 
                             // 检查是否需要拦截响应
                             if let Some(modified_response) = check_response_intercept(
@@ -2080,8 +2095,13 @@ pub async fn anthropic_messages(
                                             // 完成 Flow 捕获并检查响应拦截（重试成功）
                                             // **Validates: Requirements 2.1, 2.5**
                                             if let Some(fid) = &flow_id {
-                                                let llm_response =
-                                                    build_llm_response(200, &parsed.content, None);
+                                                let (est_input, est_output) =
+                                                    parsed.estimate_tokens();
+                                                let llm_response = build_llm_response(
+                                                    200,
+                                                    &parsed.content,
+                                                    Some((est_input, est_output)),
+                                                );
 
                                                 // 检查是否需要拦截响应
                                                 if let Some(modified_response) =

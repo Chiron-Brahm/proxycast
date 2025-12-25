@@ -491,6 +491,29 @@ impl MachineIdService {
         })
     }
 
+    // === macOS 存根实现 (非 macOS 平台) ===
+
+    #[cfg(not(target_os = "macos"))]
+    async fn set_macos_machine_id(&self, _new_id: &str) -> Result<MachineIdResult, String> {
+        Ok(MachineIdResult {
+            success: false,
+            message: "macOS machine ID modification not supported on this platform".to_string(),
+            requires_restart: false,
+            requires_admin: false,
+            new_machine_id: None,
+        })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    async fn check_macos_admin(&self) -> Result<AdminStatus, String> {
+        Ok(AdminStatus {
+            is_admin: false,
+            platform: "non-macOS".to_string(),
+            elevation_method: None,
+            check_success: false,
+        })
+    }
+
     // === Linux 特定实现 ===
 
     #[cfg(target_os = "linux")]

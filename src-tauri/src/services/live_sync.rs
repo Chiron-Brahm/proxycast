@@ -425,12 +425,19 @@ pub fn check_config_sync(
     // 获取配置文件的修改时间
     let last_modified = get_config_last_modified(app_type);
 
-    // 比较配置
+    // 比较配置 - 重要：需要更智能的比对逻辑
     let status = if current_provider == external_provider {
         SyncStatus::InSync
     } else if external_provider == "unknown" {
+        // 外部配置无法识别，可能是配置文件不存在或损坏
         SyncStatus::OutOfSync
     } else {
+        // 这里需要更智能的判断：
+        // 如果外部配置是通过ProxyCast设置的，应该检查是否已有匹配的provider
+        // 只有确实是来自其他外部软件的配置才标记为冲突
+
+        // 对于简化，先标记为冲突，让前端的更详细的比对逻辑来处理
+        // 实际上前端的 configsMatch 函数会做更精确的比对
         SyncStatus::Conflict
     };
 

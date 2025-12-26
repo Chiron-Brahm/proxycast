@@ -102,40 +102,46 @@ function configsMatch(
 
   // 检查是否有任何关键字段匹配
   let hasAnyMatch = false;
+  let hasConflict = false;
 
-  // 比较 env 字段
+  // 比较 env 字段 - 修复：更宽松的匹配逻辑
   for (const key of envKeysToCompare) {
     const liveVal = liveEnv[key] as string | undefined;
     const providerVal = providerEnv[key] as string | undefined;
 
-    if (liveVal && providerVal) {
+    // 如果两个值都存在且不为空，它们必须相等
+    if (liveVal && liveVal.trim() && providerVal && providerVal.trim()) {
       if (liveVal !== providerVal) {
-        return false;
+        hasConflict = true;
+      } else {
+        hasAnyMatch = true;
       }
-      hasAnyMatch = true;
-    } else if (liveVal && !providerVal) {
-      return false;
-    } else if (!liveVal && providerVal && key !== "ANTHROPIC_BASE_URL") {
-      return false;
     }
+    // 如果只有一方有值，不算冲突，但也不算匹配
+    // 这允许配置中可能存在额外的字段
   }
 
   // 比较 Codex auth.OPENAI_API_KEY
   const liveApiKey = liveAuth.OPENAI_API_KEY as string | undefined;
   const providerApiKey = providerAuth.OPENAI_API_KEY as string | undefined;
 
-  if (liveApiKey && providerApiKey) {
+  if (
+    liveApiKey &&
+    liveApiKey.trim() &&
+    providerApiKey &&
+    providerApiKey.trim()
+  ) {
     if (liveApiKey !== providerApiKey) {
-      return false;
+      hasConflict = true;
+    } else {
+      hasAnyMatch = true;
     }
-    hasAnyMatch = true;
-  } else if (liveApiKey && !providerApiKey) {
-    return false;
-  } else if (!liveApiKey && providerApiKey) {
-    return false;
   }
 
-  return hasAnyMatch;
+  // 如果有冲突，返回 false
+  // 如果有任何匹配且无冲突，返回 true
+  // 如果没有匹配也没有冲突（比如配置为空），返回 false
+  return hasAnyMatch && !hasConflict;
 }
 
 // 从实际配置中提取简短描述

@@ -72,7 +72,10 @@ export function BinaryComponents() {
     setDownloadProgress(null);
     try {
       const result = await installAster();
-      toast.success(result);
+      toast.success(result, {
+        description: "请重启应用以启用 AI Agent 功能",
+        duration: 10000,
+      });
       await fetchStatus();
     } catch (error) {
       toast.error(`安装失败: ${error}`);

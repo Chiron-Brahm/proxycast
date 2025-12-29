@@ -330,7 +330,10 @@ export function AgentChatPage() {
     setInstallProgress(null);
     try {
       await installAster();
-      toast.success("aster-server 安装成功");
+      toast.success("aster-server 安装成功", {
+        description: "请重启应用以启用 AI Agent 功能",
+        duration: 10000,
+      });
       setAsterInstalled(true);
     } catch (error) {
       toast.error(`安装失败: ${error}`);
